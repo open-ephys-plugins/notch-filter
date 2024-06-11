@@ -26,6 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdio.h>
 
+
 void BandstopFilterSettings::createFilters(int numChannels, float sampleRate_, double lowCut, double highCut)
 {
 
@@ -36,8 +37,8 @@ void BandstopFilterSettings::createFilters(int numChannels, float sampleRate_, d
     for (int n = 0; n < numChannels; ++n)
     {
         filters.add(new Dsp::SmoothedFilterDesign
-            <Dsp::Butterworth::Design::BandStop    // design type
-            <2>,                                   // order
+            < Dsp::Butterworth::Design::BandStop  // design type
+            <4>,                                   // order
             1,                                     // number of channels (must be const)
             Dsp::DirectFormII>(1));               // realization
 
@@ -58,7 +59,7 @@ void BandstopFilterSettings::setFilterParameters(double lowCut, double highCut, 
 {
     Dsp::Params params;
     params[0] = sampleRate;                 // sample rate
-    params[1] = 2;                          // order
+    params[1] = 4;                          // order
     params[2] = (highCut + lowCut) / 2;     // center frequency
     params[3] = highCut - lowCut;           // bandwidth
 
@@ -70,8 +71,8 @@ BandstopFilter::BandstopFilter()
     : GenericProcessor("Notch Filter")
 {
 
-    addFloatParameter(Parameter::STREAM_SCOPE, "high_cut", "Filter high cut", 6000, 0.1, 15000, false);
-    addFloatParameter(Parameter::STREAM_SCOPE, "low_cut", "Filter low cut", 300, 0.1, 15000, false);
+    addFloatParameter(Parameter::STREAM_SCOPE, "high_cut", "Filter high cut", 61, 0.1, 15000, false);
+    addFloatParameter(Parameter::STREAM_SCOPE, "low_cut", "Filter low cut", 59, 0.1, 15000, false);
     addMaskChannelsParameter(Parameter::STREAM_SCOPE, "Channels", "Channels to filter for this stream");
 
 }
