@@ -20,71 +20,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "ProcessorPlugin.h"
-
-#include "ProcessorPluginEditor.h"
+#include "BandstopFilterEditor.h"
 
 
-ProcessorPlugin::ProcessorPlugin()
-    : GenericProcessor("Plugin Name")
+BandstopFilterEditor::BandstopFilterEditor(GenericProcessor* parentNode) : GenericEditor(parentNode)
 {
+    desiredWidth = 150;
 
-}
-
-
-ProcessorPlugin::~ProcessorPlugin()
-{
-
-}
-
-
-AudioProcessorEditor* ProcessorPlugin::createEditor()
-{
-    editor = std::make_unique<ProcessorPluginEditor>(this);
-    return editor.get();
-}
-
-
-void ProcessorPlugin::updateSettings()
-{
-
-
-}
-
-
-void ProcessorPlugin::process(AudioBuffer<float>& buffer)
-{
-
-    checkForEvents(true);
-
-}
-
-
-void ProcessorPlugin::handleTTLEvent(TTLEventPtr event)
-{
-
-}
-
-
-void ProcessorPlugin::handleSpike(SpikePtr spike)
-{
-
-}
-
-
-void ProcessorPlugin::handleBroadcastMessage(String message)
-{
-
-}
-
-
-void ProcessorPlugin::saveCustomParametersToXml(XmlElement* parentElement)
-{
-
-}
-
-
-void ProcessorPlugin::loadCustomParametersFromXml(XmlElement* parentElement)
-{
+    addTextBoxParameterEditor("low_cut", 10, 22);
+    addTextBoxParameterEditor("high_cut", 10, 62);
+    addMaskChannelsParameterEditor("Channels", 10, 108);
 
 }
