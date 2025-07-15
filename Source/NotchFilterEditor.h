@@ -20,16 +20,34 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "BandstopFilterEditor.h"
+#ifndef PROCESSORPLUGINEDITOR_H_DEFINED
+#define PROCESSORPLUGINEDITOR_H_DEFINED
 
+#include <EditorHeaders.h>
 
-BandstopFilterEditor::BandstopFilterEditor(GenericProcessor* parentNode) : GenericEditor(parentNode)
+/**
+
+  User interface for the NotchFilter processor.
+
+  @see NotchFilter
+
+*/
+
+class NotchFilterEditor : public GenericEditor
 {
-    desiredWidth = 165;
+public:
 
-    addBoundedValueParameterEditor (Parameter::STREAM_SCOPE, "low_cut", 15, 29);
-    addBoundedValueParameterEditor (Parameter::STREAM_SCOPE, "high_cut", 15, 54);
-    addMaskChannelsParameterEditor (Parameter::STREAM_SCOPE, "channels", 15, 79);
-    addComboBoxParameterEditor (Parameter::PROCESSOR_SCOPE, "threads", 15, 104);
+    /** Constructor */
+    NotchFilterEditor(GenericProcessor* parentNode);
 
-}
+    /** Destructor */
+    ~NotchFilterEditor() { };
+
+private:
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NotchFilterEditor);   
+
+};
+
+
+#endif // PROCESSORPLUGINEDITOR_H_DEFINED

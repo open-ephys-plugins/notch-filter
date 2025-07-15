@@ -30,28 +30,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /** Holds settings for one stream's filters*/
 
-class BandstopFilterSettings
+class NotchFilterSettings
 {
 
 public:
 
-	/** Constructor -- sets default values*/
-	BandstopFilterSettings() { }
+    /** Constructor -- sets default values*/
+    NotchFilterSettings() { }
 
-	/** Holds the sample rate for this stream*/
-	float sampleRate;
+    /** Holds the sample rate for this stream*/
+    float sampleRate;
 
-	/** Holds the filters for one stream*/
-	OwnedArray<Dsp::Filter> filters;
+    /** Holds the filters for one stream*/
+    OwnedArray<Dsp::Filter> filters;
 
-	/** Creates new filters when input settings change*/
-	void createFilters(int numChannels, float sampleRate, double lowCut, double highCut);
+    /** Creates new filters when input settings change*/
+    void createFilters(int numChannels, float sampleRate, double lowCut, double highCut);
 
-	/** Updates filters when parameters change*/
-	void updateFilters(double lowCut, double highCut);
+    /** Updates filters when parameters change*/
+    void updateFilters(double lowCut, double highCut);
 
-	/** Sets filter parameters for one channel*/
-	void setFilterParameters(double lowCut, double highCut, int channel);
+    /** Sets filter parameters for one channel*/
+    void setFilterParameters(double lowCut, double highCut, int channel);
 
 };
 
@@ -72,14 +72,14 @@ private:
     int numChannels;
 };
 
-class BandstopFilter : public GenericProcessor
+class NotchFilter : public GenericProcessor
 {
 public:
     /** The class constructor, used to initialize any members. */
-    BandstopFilter();
+    NotchFilter();
 
     /** The class destructor, used to deallocate memory. */
-    ~BandstopFilter() { }
+    ~NotchFilter() { }
 
     /** Registers the parameters for a given processor */
     void registerParameters() override;
@@ -103,11 +103,11 @@ public:
 
 private:
 
-    StreamSettings<BandstopFilterSettings> settings;
+    StreamSettings<NotchFilterSettings> settings;
 
     std::unique_ptr<ThreadPool> threadPool;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(BandstopFilter);
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NotchFilter);
 
 };
 

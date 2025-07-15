@@ -20,14 +20,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "BandstopFilter.h"
+#include "NotchFilter.h"
 
-#include "BandstopFilterEditor.h"
+#include "NotchFilterEditor.h"
 
 #include <stdio.h>
 
 
-void BandstopFilterSettings::createFilters(int numChannels, float sampleRate_, double lowCut, double highCut)
+void NotchFilterSettings::createFilters(int numChannels, float sampleRate_, double lowCut, double highCut)
 {
 
     sampleRate = sampleRate_;
@@ -47,7 +47,7 @@ void BandstopFilterSettings::createFilters(int numChannels, float sampleRate_, d
     updateFilters(lowCut, highCut);
 }
 
-void BandstopFilterSettings::updateFilters(double lowCut, double highCut)
+void NotchFilterSettings::updateFilters(double lowCut, double highCut)
 {
     for (int n = 0; n < filters.size(); n++)
     {
@@ -55,7 +55,7 @@ void BandstopFilterSettings::updateFilters(double lowCut, double highCut)
     }
 }
 
-void BandstopFilterSettings::setFilterParameters(double lowCut, double highCut, int channel)
+void NotchFilterSettings::setFilterParameters(double lowCut, double highCut, int channel)
 {
     Dsp::Params params;
     params[0] = sampleRate;                 // sample rate
@@ -87,13 +87,13 @@ ThreadPoolJob::JobStatus FilterJob::runJob()
 }
 
 
-BandstopFilter::BandstopFilter()
+NotchFilter::NotchFilter()
     : GenericProcessor("Notch Filter")
 {
     threadPool = std::make_unique<ThreadPool>(4);
 }
 
-void BandstopFilter::registerParameters()
+void NotchFilter::registerParameters()
 {
 
     addFloatParameter (Parameter::STREAM_SCOPE, "low_cut", "Low cut", "Filter low cut", "Hz", 59, 1, 100, 1.0, false);
@@ -105,14 +105,14 @@ void BandstopFilter::registerParameters()
 
 }
 
-AudioProcessorEditor* BandstopFilter::createEditor()
+AudioProcessorEditor* NotchFilter::createEditor()
 {
-    editor = std::make_unique<BandstopFilterEditor>(this);
+    editor = std::make_unique<NotchFilterEditor>(this);
 
     return editor.get();
 }
 
-void BandstopFilter::updateSettings()
+void NotchFilter::updateSettings()
 {
     settings.update(getDataStreams());
 
@@ -140,7 +140,7 @@ void BandstopFilter::updateSettings()
 }
 
 
-void BandstopFilter::parameterValueChanged(Parameter* param)
+void NotchFilter::parameterValueChanged(Parameter* param)
 {
 
     uint16 currentStream = param->getStreamId();
@@ -182,19 +182,19 @@ void BandstopFilter::parameterValueChanged(Parameter* param)
     }
 }
 
-bool BandstopFilter::stopAcquisition()
+bool NotchFilter::stopAcquisition()
 {
     return threadPool->removeAllJobs (true, 1000);
 }
 
-void BandstopFilter::process(AudioBuffer<float>& buffer)
+void NotchFilter::process(AudioBuffer<float>& buffer)
 {
 
     for (auto stream : getDataStreams())
     {
         if ((*stream)["enable_stream"])
         {
-            BandstopFilterSettings* streamSettings = settings[stream->getStreamId()];
+            NotchFilterSettings* streamSettings = settings[stream->getStreamId()];
 
             const uint16 streamId = stream->getStreamId();
             const uint32 numSamples = getNumSamplesInBlock (streamId);
