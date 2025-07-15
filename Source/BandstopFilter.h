@@ -55,6 +55,23 @@ public:
 
 };
 
+/** Allows multi-threaded filtering */
+class FilterJob : public ThreadPoolJob
+{
+public:
+    /** Constructor */
+    FilterJob (String name, Array<Dsp::Filter*> filters, Array<float*> channelPointer, int numSamples);
+
+    /** Runs the job inside a thread */
+    JobStatus runJob();
+
+private:
+    Array<Dsp::Filter*> filters;
+    Array<float*> channelPointers;
+    int numSamples;
+    int numChannels;
+};
+
 class BandstopFilter : public GenericProcessor
 {
 public:
@@ -63,6 +80,9 @@ public:
 
     /** The class destructor, used to deallocate memory. */
     ~BandstopFilter() { }
+
+    /** Registers the parameters for a given processor */
+    void registerParameters() override;
 
     /** Creates the FilterEditor. */
     AudioProcessorEditor* createEditor() override;
@@ -76,11 +96,16 @@ public:
     /** Called when upstream settings are changed.*/
     void updateSettings() override;
 
+    /** Stops any ongoing worker threads */
+    bool stopAcquisition() override;
+
+    static constexpr int CHANNELS_PER_THREAD = 32;
+
 private:
 
     StreamSettings<BandstopFilterSettings> settings;
 
-    void setFilterParameters(double, double, int);
+    std::unique_ptr<ThreadPool> threadPool;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(BandstopFilter);
 

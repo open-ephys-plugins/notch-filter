@@ -2,7 +2,7 @@
 ------------------------------------------------------------------
 
 This file is part of the Open Ephys GUI
-Copyright (C) 2022 Open Ephys
+Copyright (C) 2025 Open Ephys
 
 ------------------------------------------------------------------
 
@@ -27,9 +27,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
 
-  User interface for the FilterNode processor.
+  User interface for the BandstopFilter processor.
 
-  @see FilterNode
+  @see BandstopFilter
 
 */
 

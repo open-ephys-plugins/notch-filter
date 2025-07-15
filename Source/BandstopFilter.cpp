@@ -2,7 +2,7 @@
 ------------------------------------------------------------------
 
 This file is part of the Open Ephys GUI
-Copyright (C) 2022 Open Ephys
+Copyright (C) 2025 Open Ephys
 
 ------------------------------------------------------------------
 
@@ -66,14 +66,42 @@ void BandstopFilterSettings::setFilterParameters(double lowCut, double highCut, 
     filters[channel]->setParams(params);
 }
 
+FilterJob::FilterJob (String name, Array<Dsp::Filter*> filters_, Array<float*> channelPointers_, int numSamples_)
+    : ThreadPoolJob (name),
+      filters (filters_),
+      channelPointers (channelPointers_),
+      numSamples (numSamples_),
+      numChannels (channelPointers_.size())
+{
+}
+
+ThreadPoolJob::JobStatus FilterJob::runJob()
+{
+    for (int i = 0; i < numChannels; i++)
+    {
+        float* ptr = channelPointers[i];
+        filters[i]->process (numSamples, &ptr);
+    }
+
+    return ThreadPoolJob::jobHasFinished;
+}
+
 
 BandstopFilter::BandstopFilter()
     : GenericProcessor("Notch Filter")
 {
+    threadPool = std::make_unique<ThreadPool>(4);
+}
 
-    addFloatParameter(Parameter::STREAM_SCOPE, "high_cut", "Filter high cut", 61, 0.1, 15000, false);
-    addFloatParameter(Parameter::STREAM_SCOPE, "low_cut", "Filter low cut", 59, 0.1, 15000, false);
-    addMaskChannelsParameter(Parameter::STREAM_SCOPE, "Channels", "Channels to filter for this stream");
+void BandstopFilter::registerParameters()
+{
+
+    addFloatParameter (Parameter::STREAM_SCOPE, "low_cut", "Low cut", "Filter low cut", "Hz", 59, 1, 100, 1.0, false);
+    addFloatParameter (Parameter::STREAM_SCOPE, "high_cut", "High cut", "Filter high cut", "Hz", 61, 1, 100, 1.0, false);
+    addMaskChannelsParameter (Parameter::STREAM_SCOPE, "channels", "Channels", "Channels to filter for this stream");
+
+    Array<String> numThreads { "1", "4", "8", "16", "32", "64" };
+    addCategoricalParameter (Parameter::PROCESSOR_SCOPE, "threads", "Threads", "Number of threads to use", numThreads, 1, true);
 
 }
 
@@ -83,64 +111,6 @@ AudioProcessorEditor* BandstopFilter::createEditor()
 
     return editor.get();
 }
-
-// ----------------------------------------------------
-// From the filter library documentation:
-// ----------------------------------------------------
-//
-// each family of filters is given its own namespace
-// RBJ: filters from the RBJ cookbook
-// Butterworth
-// ChebyshevI: ripple in the passband
-// ChebyshevII: ripple in the stop band
-// Elliptic: ripple in both the passband and stopband
-// Bessel: theoretically with linear phase
-// Legendre: "Optimum-L" filters with steepest transition and monotonic passband
-// Custom: Simple filters that allow poles and zeros to be specified directly
-
-// within each namespace exists a set of "raw filters"
-// Butterworth::LowPass
-//				HighPass
-// 				BandPass
-//				BandStop
-//				LowShelf
-// 				HighShelf
-//				BandShelf
-//
-//	class templates (such as SimpleFilter) which require FilterClasses
-//    expect an identifier of a raw filter
-//  raw filters do not support introspection, or the Params style of changing
-//    filter settings; they only offer a setup() function for updating the IIR
-//    coefficients to a given set of parameters
-//
-
-// each filter family namespace also has the nested namespace "Design"
-// here we have all of the raw filter names repeated, except these classes
-//  also provide the Design interface, which adds introspection, polymorphism,
-//  the Params style of changing filter settings, and in general all fo the features
-//  necessary to interoperate with the Filter virtual base class and its derived classes
-
-// available methods:
-//
-// filter->getKind()
-// filter->getName()
-// filter->getNumParams()
-// filter->getParamInfo()
-// filter->getDefaultParams()
-// filter->getParams()
-// filter->getParam()
-
-// filter->setParam()
-// filter->findParamId()
-// filter->setParamById()
-// filter->setParams()
-// filter->copyParamsFrom()
-
-// filter->getPoleZeros()
-// filter->response()
-// filter->getNumChannels()
-// filter->reset()
-// filter->process()
 
 void BandstopFilter::updateSettings()
 {
@@ -155,6 +125,18 @@ void BandstopFilter::updateSettings()
             (*stream)["high_cut"]
         );
     }
+
+    int totalChans = getTotalContinuousChannels();
+    int numThreads = threadPool->getNumThreads();
+
+    if (totalChans <= 32)
+    {
+        getParameter("threads")->setNextValue (0, false); // set to 1 thread
+    }
+    else if (totalChans > 32 && numThreads < 4)
+    {
+        getParameter("threads")->setNextValue (1, false); // set to 4 threads
+    }
 }
 
 
@@ -163,60 +145,96 @@ void BandstopFilter::parameterValueChanged(Parameter* param)
 
     uint16 currentStream = param->getStreamId();
 
-    if (param->getName().equalsIgnoreCase("low_cut"))
+    if (param->getName().equalsIgnoreCase ("low_cut"))
     {
-
-        if ((*getDataStream(currentStream))["low_cut"] >= (*getDataStream(currentStream))["high_cut"])
+        if ((*getDataStream (currentStream))["low_cut"] >= (*getDataStream (currentStream))["high_cut"])
         {
-            getDataStream(currentStream)->getParameter("low_cut")->restorePreviousValue();
+            getDataStream (currentStream)->getParameter ("low_cut")->restorePreviousValue();
             return;
         }
 
-
-        settings[currentStream]->updateFilters(
-            (*getDataStream(currentStream))["low_cut"],
-            (*getDataStream(currentStream))["high_cut"]
-        );
+        settings[currentStream]->updateFilters (
+            (*getDataStream (currentStream))["low_cut"],
+            (*getDataStream (currentStream))["high_cut"]);
     }
-    else if (param->getName().equalsIgnoreCase("high_cut"))
+    else if (param->getName().equalsIgnoreCase ("high_cut"))
     {
-
-        if ((*getDataStream(currentStream))["high_cut"] <= (*getDataStream(currentStream))["low_cut"])
+        if ((*getDataStream (currentStream))["high_cut"] <= (*getDataStream (currentStream))["low_cut"])
         {
-            getDataStream(currentStream)->getParameter("high_cut")->restorePreviousValue();
+            getDataStream (currentStream)->getParameter ("high_cut")->restorePreviousValue();
             return;
         }
 
-        settings[currentStream]->updateFilters(
-            (*getDataStream(currentStream))["low_cut"],
-            (*getDataStream(currentStream))["high_cut"]
-        );
+        settings[currentStream]->updateFilters (
+            (*getDataStream (currentStream))["low_cut"],
+            (*getDataStream (currentStream))["high_cut"]);
+    }
+    else if (param->getName().equalsIgnoreCase ("threads"))
+    {
+        if (threadPool->getNumJobs() > 0)
+        {
+            param->restorePreviousValue();
+            return;
+        }
+
+        int numThreads = param->getValueAsString().getIntValue();
+        threadPool.reset (new ThreadPool (numThreads));
     }
 }
 
+bool BandstopFilter::stopAcquisition()
+{
+    return threadPool->removeAllJobs (true, 1000);
+}
 
 void BandstopFilter::process(AudioBuffer<float>& buffer)
 {
 
     for (auto stream : getDataStreams())
     {
-
         if ((*stream)["enable_stream"])
         {
             BandstopFilterSettings* streamSettings = settings[stream->getStreamId()];
 
             const uint16 streamId = stream->getStreamId();
-            const uint32 numSamples = getNumSamplesInBlock(streamId);
+            const uint32 numSamples = getNumSamplesInBlock (streamId);
 
-            for (auto localChannelIndex : *((*stream)["Channels"].getArray()))
+            int i = 0;
+            Array<float*> channelPointers;
+            Array<Dsp::Filter*> filters;
+
+            for (auto localChannelIndex : *((*stream)["channels"].getArray()))
             {
-                int globalChannelIndex = getGlobalChannelIndex(stream->getStreamId(), (int)localChannelIndex);
+                int globalChannelIndex = getGlobalChannelIndex (stream->getStreamId(), (int) localChannelIndex);
 
-                float* ptr = buffer.getWritePointer(globalChannelIndex);
+                channelPointers.add (buffer.getWritePointer (globalChannelIndex));
+                filters.add (streamSettings->filters[localChannelIndex]);
+                i++;
 
-                streamSettings->filters[localChannelIndex]->process(numSamples, &ptr);
+                if (i % CHANNELS_PER_THREAD == 0)
+                {
+                    String jobName = String (streamId) + "_" + String (i++);
 
+                    FilterJob* job = new FilterJob (jobName, filters, channelPointers, numSamples);
+
+                    threadPool->addJob (job, true);
+
+                    channelPointers.clear();
+                    filters.clear();
+                }
+            }
+
+            if (channelPointers.size() > 0)
+            {
+                String jobName = String (streamId) + "_" + String (i++);
+
+                FilterJob* job = new FilterJob (jobName, filters, channelPointers, numSamples);
+
+                threadPool->addJob (job, true);
             }
         }
     }
+
+    while (threadPool->getNumJobs() > 0)
+        std::this_thread::sleep_for (std::chrono::microseconds (50));
 }

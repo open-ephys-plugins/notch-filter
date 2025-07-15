@@ -2,7 +2,7 @@
 ------------------------------------------------------------------
 
 This file is part of the Open Ephys GUI
-Copyright (C) 2022 Open Ephys
+Copyright (C) 2025 Open Ephys
 
 ------------------------------------------------------------------
 
@@ -25,10 +25,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 BandstopFilterEditor::BandstopFilterEditor(GenericProcessor* parentNode) : GenericEditor(parentNode)
 {
-    desiredWidth = 150;
+    desiredWidth = 165;
 
-    addTextBoxParameterEditor("low_cut", 10, 22);
-    addTextBoxParameterEditor("high_cut", 10, 62);
-    addMaskChannelsParameterEditor("Channels", 10, 108);
+    addBoundedValueParameterEditor (Parameter::STREAM_SCOPE, "low_cut", 15, 29);
+    addBoundedValueParameterEditor (Parameter::STREAM_SCOPE, "high_cut", 15, 54);
+    addMaskChannelsParameterEditor (Parameter::STREAM_SCOPE, "channels", 15, 79);
+    addComboBoxParameterEditor (Parameter::PROCESSOR_SCOPE, "threads", 15, 104);
 
 }
